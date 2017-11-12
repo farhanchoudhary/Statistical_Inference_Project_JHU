@@ -1,0 +1,109 @@
+---
+title: "Statistical Inference Project"
+author: "Farhan Choudhary"
+date: "12th November 2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions for the Project
+
+This project consists of two parts and in this simulation we will explore inference and perform some simple inferential statistics. The project is divided into two parts
+
+- A Simulation Exercise
+- Basic Inferential Data Analysis
+
+###Problem Statement
+
+Now in the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.
+
+1. Load the ToothGrowth data and perform some basic exploratory data analyses
+2. Provide a basic summary of the data.
+3. Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
+4. State your conclusions and the assumptions needed for your conclusions.
+
+## B. Inference on ToothGrowth Data
+
+#### 1. Loading the dataset and basic exploratory data analysis
+
+```{r}
+data("ToothGrowth")
+str(ToothGrowth)
+rbind(head(ToothGrowth,2), tail(ToothGrowth,2))
+```
+\pagebreak
+
+#### 2. Provide basic summary of the data
+
+```{r}
+summary(ToothGrowth)
+
+library(ggplot2)
+
+growth <- ggplot(ToothGrowth, aes(x = dose, y = len), col = supp) + 
+    geom_point(shape = 1, size = 3) + 
+    facet_wrap(~ supp)
+
+growth
+```
+
+Figure 1. Response (len) based on dose (0.5, 1, 2)mg and supplement type (OJ, VC) from 10 guinea pigs.
+
+\pagebreak
+
+#### 3. Use confidence intervals and/or hypothesis tests to compare tooth growth
+
+First, differences in len are evaluate for pairs of dose levels = {0.5, 1, 2} mg. The data are paired by dose and so three paired t-test are performed:
+
+| **t-test Index** | $Dose A$ | $Dose B$|
+|------|------|-----|
+|1.| 0.5 | 1|
+|2. | 0.5 | 2 |
+|3. | 1 | 2 |
+
+Also, group variances are assumed to be unequal as they are unknown. Assuming unequal variance results in wider confidence intervals than equal variance, which is more conservative. The 95% confidence intervals (CIs) are:
+
+##### $Part I: Dose$
+
+```{r}
+lenDose1 <- subset(ToothGrowth, dose %in% c(0.5,1))
+lenDose2 <- subset(ToothGrowth, dose %in% c(0.5,2))
+lenDose3 <- subset(ToothGrowth, dose %in% c(1,2))
+
+rbind(
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose1)$conf,
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose2)$conf,
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose3)$conf
+)
+```
+
+As the 95% CIs are entirely below zero, these t-tests suggest the smaller doses result in less tooth growth; or, increasing the dose increases tooth growth. Additionally, the p-values are small (<< 0.05), strongly suggesting more tooth growth with higher doses.
+
+```{r}
+rbind(
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose1)$p.value,
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose2)$p.value,
+    t.test(len ~ dose, paired = TRUE, var.equal = FALSE, data = lenDose3)$p.value
+)
+```
+
+\pagebreak
+
+##### $Part II: Supplement$
+
+Second, a paired t-test is performed to evaluate a difference in tooth growth (len) between the two supplments (supp = {OJ, VC}). Again, unequal variance is assumed to be conservative.
+
+```{r}
+t.test(len ~ supp, paired = TRUE, var.equal = FALSE, data = ToothGrowth)
+```
+
+The 95% CI = (1.409, 5.991) suggests the supplment OJ provides more tooth growth than supplment VC. This is corroborated by a small p-value = 0.00255.
+
+#### 4. Conclusions
+
+Confidence testing while varying dosage results that an increase in dosage from .5, 1, to 2 is proportianal to longer tooth. However, with a p-value of 0.06 and having zero in the confidence interval means we can not reject the null hypothesis that different supplement types have no effect on tooth length.
